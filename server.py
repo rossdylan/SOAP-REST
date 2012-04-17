@@ -2,6 +2,14 @@ from bottle import route, run, request
 from threading import Thread, Lock
 import os
 import json
+import logging
+logger = logging.getLogger("soap")
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler("soap.log")
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+
+
 class SoapServer(object):
 
     def __new__(self, *args, **kwargs):
@@ -11,7 +19,7 @@ class SoapServer(object):
 
         obj = super(SoapServer, self).__new__(self, *args, **kwargs)
         route("/status", method="GET")(obj.status)
-        route("play", method="POST")(obj.playStream)
+        route("/play", method="POST")(obj.playStream)
         return obj
 
     def __init__(self, port, bathrooms, timeout=20):
@@ -27,7 +35,6 @@ class SoapServer(object):
         :type timeout: int
         :param timeout: time in minutes to wait before killing a stream
         """
-
         self.soap_port = port
         self.timeout = timeout * 60
         self.command_string = "timeout -s SIGKILL {} mplayer -cache 1024 -lavdopts threads=5 -noconsolecontrols -ao alsa;device=hw={}.0 {}"
@@ -36,14 +43,15 @@ class SoapServer(object):
         self.currently_playing = {}
         for device in self.bathrooms.items():
             self.locks[device] = Lock()
+        logger.info("Intialized SOAP with {0} bathrooms".format(len(self.bathrooms)))
 
     def playStream(self):
         """
         Play a stream recieved via REST
         """
-
         bathroom = request.forms.get("bathroom")
         stream = request.forms.get("stream")
+        logger.debug("Recieved play request with {0} and {1}".format(bathroom, stream))
         play_thread = Thread(target=self.playSong,args=(self.bathrooms[bathroom],stream))
         play_thread.start()
 
@@ -55,6 +63,7 @@ class SoapServer(object):
         status_dict = {}
         for bathroom in self.bathrooms:
             status_dict[bathroom] = self.currently_playing[self.bathrooms[bathroom]]
+        logger.debug("Recieved status request, returning {0}".format(str(status_dict)))
         return json.dumps(status_dict)
 
     def playSong(self,device, stream):
@@ -67,12 +76,15 @@ class SoapServer(object):
         :type stream: str
         :param stream: string containing the stream to stream to a bathroom
         """
-
+        logger.debug("Aquiring lock {0}".format(device))
         self.locks[device].acquire()
+        logger.debug("Aquired lock {0}".format(device))
         self.currently_playing[device] = stream
+        logger.info("Playing {0} on device {1}".format(stream, device))
         os.system(self.command_string.format(self.timeout,device,stream))
         self.currently_playing[device] = ""
         self.locks[device].release()
+        logger.debug("Relased lock {0}".format(device))
 
     def start(self):
         """
