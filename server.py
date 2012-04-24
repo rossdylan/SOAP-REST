@@ -35,7 +35,7 @@ class SoapServer(object):
         :type timeout: int
         :param timeout: time in minutes to wait before killing a stream
         """
-        self.soap_port = port
+        self.port = port
         self.timeout = timeout * 60
         self.command_string = "timeout -s SIGKILL {} mplayer -cache 1024 -lavdopts threads=5 -noconsolecontrols -ao alsa;device=hw={}.0 {}"
         self.bathrooms = bathrooms
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     import sys
     if sys.argv[1] == "north":
         bathrooms = {"The L": 2, "The Stairs": 1, "The Vator": 0}
-    if sys.argv[1] == "south":
+    elif sys.argv[1] == "south":
         bathrooms = {"The Stairs": 1, "The Vator": 0}
     else:
         exit()
