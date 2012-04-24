@@ -42,7 +42,8 @@ class SoapServer(object):
         self.locks = {}
         self.currently_playing = {}
         for device in self.bathrooms.items():
-            self.locks[device] = Lock()
+            self.locks[device[1]] = Lock()
+        print self.locks
         logger.info("Intialized SOAP with {0} bathrooms".format(len(self.bathrooms)))
 
     def playStream(self):
