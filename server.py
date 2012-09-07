@@ -44,7 +44,6 @@ class SoapServer(object):
         for device in self.bathrooms.items():
             self.locks[device[1]] = Lock()
             self.currently_playing[device[1]] = ""
-        print self.locks
         logger.info("Intialized SOAP with {0} bathrooms".format(len(self.bathrooms)))
 
     def playStream(self):
@@ -63,9 +62,7 @@ class SoapServer(object):
         """
 
         status_dict = {}
-        print self.bathrooms
         for bathroom in self.bathrooms.items():
-            print bathroom
             status_dict[bathroom[0]] = self.currently_playing[bathroom[1]]
         logger.debug("Recieved status request, returning {0}".format(str(status_dict)))
         return json.dumps(status_dict)
