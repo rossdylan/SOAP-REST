@@ -50,11 +50,15 @@ class SoapServer(object):
         """
         Play a stream recieved via REST
         """
-        bathroom = request.forms.get("bathroom")
-        stream = request.forms.get("stream")
+        data = json.loads(request.body.read())
+        bathroom = data.get('bathroom')
+        stream = data.get('stream')
         logger.debug("Recieved play request with {0} and {1}".format(bathroom, stream))
-        play_thread = Thread(target=self.playSong,args=(self.bathrooms[bathroom],stream))
-        play_thread.start()
+        if stream and bathroom:
+            logger.debug('Invalid stream or bathroom')
+        else:
+            play_thread = Thread(target=self.playSong,args=(self.bathrooms[bathroom],stream))
+            play_thread.start()
 
     def status(self):
         """
