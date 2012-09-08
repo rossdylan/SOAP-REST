@@ -1,8 +1,10 @@
 from bottle import route, run, request
 from threading import Thread, Lock
+from pipes import quote
 import os
 import json
 import logging
+
 logger = logging.getLogger("soap")
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler("soap.log")
@@ -37,7 +39,7 @@ class SoapServer(object):
         """
         self.port = port
         self.timeout = timeout * 60
-        self.command_string = "timeout -s SIGKILL {} mplayer -cache 1024 -lavdopts threads=5 -noconsolecontrols -ao alsa;device=hw={}.0 {}"
+        self.command_string = "timeout -s SIGKILL {0} mplayer -cache 1024 -lavdopts threads=5 -noconsolecontrols -ao alsa;device=hw={1}.0 {2}"
         self.bathrooms = bathrooms
         self.locks = {}
         self.currently_playing = {}
@@ -54,9 +56,10 @@ class SoapServer(object):
         bathroom = data.get('bathroom')
         stream = data.get('stream')
         logger.debug("Recieved play request with {0} and {1}".format(bathroom, stream))
-        if stream and bathroom:
+        if not stream and not bathroom:
             logger.debug('Invalid stream or bathroom')
         else:
+            stream = quote(stream)
             play_thread = Thread(target=self.playSong,args=(self.bathrooms[bathroom],stream))
             play_thread.start()
 
